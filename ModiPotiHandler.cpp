@@ -26,6 +26,6 @@ uint8_t ModiPotiHandler::getGroupID() {
 
 uint16_t ModiPotiHandler::normalizedModePoti() {
     int16_t value = this->getValue();
-    value = max(0,value -this->startValue);
+    value = max(0,value - this->startValue);
     return value;
 }

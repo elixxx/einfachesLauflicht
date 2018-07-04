@@ -15,5 +15,6 @@ class CompositionPulsatinglauflicht: public BaseTimedEvent {
         void updateValuesAndOutput(uint8_t i);
         int8_t directions[3];
         int16_t values[3];
+        uint16_t old_brightness;
 };
 #endif

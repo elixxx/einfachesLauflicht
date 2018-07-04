@@ -29,7 +29,7 @@ void EffectLauflicht::validRun() {
  }
 
  void EffectLauflicht::setDelayMs(uint16_t delayMs) {
-     this->delayMs=(delayMs<100)?100:delayMs;
+     this->delayMs=(delayMs<50)?50:delayMs;
  }
 
  bool EffectLauflicht::isBackward() {

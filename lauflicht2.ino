@@ -19,7 +19,8 @@
 uint8_t myPins[4] = {4,1,3,0};
 uint8_t myPinsPWM[3] = {4,1,0};
 
-static int8_t doing = -1;
+
+static IMode* activeMode = NULL;
 static uint16_t maxBrightness = 255;
 
 //Lauflicht l(myPins,4, maxBrightness,600, false);
@@ -30,10 +31,10 @@ EffectRandom randoDim(myPinsPWM,3, maxBrightness,600, true);
 EffectPulsating effPuls(myPinsPWM,3, maxBrightness, 10);
 CompositionForwardBackward compFB(myPins, 4, maxBrightness, false);
 CompositionForwardBackward compFBDim(myPinsPWM, 3, maxBrightness, true);
-CompositionPulsatinglauflicht compPL(myPinsPWM, 3, maxBrightness, 100);
+CompositionPulsatinglauflicht compPL(myPinsPWM, 3, maxBrightness, 50);
 
 ModiPotiHandler modPotiHandler(MODE_POTI, MODE_POTI_MIN_VALUE, MODE_POTI_N_GROUPS);
-ModiPotiHandler programmPotiHandler(VALUE_POTI, 7);
+ModiPotiHandler programmPotiHandler(VALUE_POTI, 9);
 
 void lower() {
     for (int i = 0; i<4; i++) {
@@ -68,12 +69,46 @@ void lowerExceptOne(uint8_t except) {
     }
 }
 
+void setActiveMode(uint8_t mode) {
+    switch(mode) {
+        case 0:
+            activeMode = &rando;
+            break;
+        case 1:
+            activeMode = &compFB;
+            break;
+
+        case 2:
+            activeMode = &l;
+            break;
+        case 3:
+            digitalWrite(3,LOW);
+            activeMode = &randoDim;
+            break;
+        case 4:
+            digitalWrite(3,LOW);
+            activeMode = &compFBDim;
+            break;
+        case 5:
+            digitalWrite(3,LOW);
+            activeMode = &lDim;
+            break;
+        case 7:
+            digitalWrite(3,LOW);
+            activeMode = &compPL;
+        case 8:
+            digitalWrite(3,LOW);
+            activeMode = &effPuls;
+            break;
+        default:
+            break;
+    }
+}
+
 void loop() {
     static uint32_t configFreqSample=millis();
     static uint8_t configFreqOnOff= LOW;
     static ConfigTimeout configTimeout(1000, nothing);
-
-    static IMode* activeMode = NULL;
 
 
 
@@ -100,43 +135,7 @@ void loop() {
             analogWrite(0, maxBrightness);
             break;
         case mode:
-/*             static uint8_t oldroupGId = 0;
-            static uint8_t newGid = programmPotiHandler.getGroupID();
-            if (oldroupGId != newGid) {
-                oldroupGId = newGid;
-                lower();
-                delay(600);
-                higher();
-             } */
-            switch(programmPotiHandler.getGroupID()) {
-                case 0:
-                    activeMode = &rando;
-                    break;
-                case 1:
-                    activeMode = &compFB;
-                    break;
-                case 2:
-                    activeMode = &l;
-                    break;
-                case 3:
-                    
-                    break;
-                case 4:
-                    digitalWrite(3,LOW);
-                    activeMode = &randoDim;
-                    break;
-                case 6:
-                    digitalWrite(3,LOW);
-                    activeMode = &compFBDim;
-                    break;
-                case 7:
-                    digitalWrite(3,LOW);
-                    activeMode = &lDim;
-                    break;
-                default:
-                    digitalWrite(3,LOW);
-                    activeMode = &effPuls;
-            }
+            setActiveMode(programmPotiHandler.getGroupID());
             activeMode->step();
             break;
         case frequenz: 
