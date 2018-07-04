@@ -8,15 +8,16 @@ ledId(0)  {}
 void EffectLauflicht::validRun() {
         /* uint8_t step_id = this->stepId %4; */
         if(this->isDim) {
-            analogWrite(steps[ledId],0);
+            analogWrite(steps[this->ledId],0);
         } else {
-            digitalWrite(steps[ledId],LOW);
+            digitalWrite(steps[this->ledId],LOW);
         }
         
         this->ledId = (this->ledId + this->direction) % this->nled;
         if ( this->ledId <0) {
             this->ledId = this->nled-1;
         }
+        
         if(this->isDim) {
             analogWrite(steps[this->ledId], this->brightness);
         } else {

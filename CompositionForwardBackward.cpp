@@ -7,9 +7,16 @@ CompositionForwardBackward::CompositionForwardBackward(uint8_t* steps,uint8_t nl
 
 void CompositionForwardBackward::validRun() {
     EffectLauflicht::validRun();
-    if(this->isFinished()) {
+    if(this->EffectLauflicht::isFinished()) {
         this->backward(!this->isBackward());
-        this->setDurationMs(5000);
+        this->EffectLauflicht::setDurationMs(2500);
 
     } 
 }
+ void CompositionForwardBackward::setDurationMs(uint16_t durationMs) {
+     this->finishTime = millis() + durationMs;
+ }
+
+ bool CompositionForwardBackward::isFinished() {
+     return ( this->finishTime <= millis());
+ }

@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "lauflicht.h"
 #include "Imode.h"
 #include "ModiPotiHandler.h"
 #include "ConfigTimeout.h"
@@ -20,7 +19,7 @@ uint8_t myPins[4] = {4,1,3,0};
 uint8_t myPinsPWM[3] = {4,1,0};
 
 
-static IMode* activeMode = NULL;
+static IMode* activeLightMode = NULL;
 static uint16_t maxBrightness = 255;
 
 //Lauflicht l(myPins,4, maxBrightness,600, false);
@@ -31,7 +30,7 @@ EffectRandom randoDim(myPinsPWM,3, maxBrightness,600, true);
 EffectPulsating effPuls(myPinsPWM,3, maxBrightness, 10);
 CompositionForwardBackward compFB(myPins, 4, maxBrightness, false);
 CompositionForwardBackward compFBDim(myPinsPWM, 3, maxBrightness, true);
-CompositionPulsatinglauflicht compPL(myPinsPWM, 3, maxBrightness, 50);
+CompositionPulsatinglauflicht compPL(myPinsPWM, 3, maxBrightness, 1);
 
 ModiPotiHandler modPotiHandler(MODE_POTI, MODE_POTI_MIN_VALUE, MODE_POTI_N_GROUPS);
 ModiPotiHandler programmPotiHandler(VALUE_POTI, 9);
@@ -68,38 +67,40 @@ void lowerExceptOne(uint8_t except) {
         }
     }
 }
-
+static bool randomActive = true;
 void setActiveMode(uint8_t mode) {
     switch(mode) {
         case 0:
-            activeMode = &rando;
+            activeLightMode = &rando;
             break;
         case 1:
-            activeMode = &compFB;
+            activeLightMode = &compFB;
             break;
-
         case 2:
-            activeMode = &l;
+            activeLightMode = &l;
             break;
         case 3:
             digitalWrite(3,LOW);
-            activeMode = &randoDim;
+            activeLightMode = &randoDim;
             break;
         case 4:
             digitalWrite(3,LOW);
-            activeMode = &compFBDim;
+            activeLightMode = &compFBDim;
             break;
         case 5:
             digitalWrite(3,LOW);
-            activeMode = &lDim;
+            activeLightMode = &lDim;
+            break;
+        case 6:
+            digitalWrite(3,LOW);
+            activeLightMode = &compPL;
             break;
         case 7:
             digitalWrite(3,LOW);
-            activeMode = &compPL;
-        case 8:
-            digitalWrite(3,LOW);
-            activeMode = &effPuls;
+            activeLightMode = &effPuls;
             break;
+        case 8:
+            randomActive = true;
         default:
             break;
     }
@@ -110,23 +111,22 @@ void loop() {
     static uint8_t configFreqOnOff= LOW;
     static ConfigTimeout configTimeout(1000, nothing);
 
-
-
-    if (activeMode == NULL) {
+    if (activeLightMode == NULL) {
         digitalWrite(3,LOW);
-        activeMode = &compPL;
+        activeLightMode = &compPL;
     }
-    Mode actualMode = modPotiHandler.getGroup();
-    configTimeout.setActualConfigMode(actualMode);
-    // When Timout not reached, just to Light
+    Mode actualPotiMode = modPotiHandler.getGroup();
+    configTimeout.setActualConfigMode(actualPotiMode);
+
+    // When Timout not reached, just show related light as feedback
     if(!configTimeout.isTimeoutOver()) {
-        lowerExceptOne(actualMode);
+        lowerExceptOne(actualPotiMode);
         delay(200);
         lower();
         return;
 
     }
-    switch(actualMode) {
+    switch(actualPotiMode) {
         case brightness:
             digitalWrite(1,LOW);
             digitalWrite(3,LOW);
@@ -135,20 +135,25 @@ void loop() {
             analogWrite(0, maxBrightness);
             break;
         case mode:
+            randomActive = false;
             setActiveMode(programmPotiHandler.getGroupID());
-            activeMode->step();
+            activeLightMode->step();
             break;
         case frequenz: 
-            activeMode->setDelayMs(analogRead(VALUE_POTI));
-            digitalWrite(myPins[actualMode], HIGH);
-            delay(activeMode->getDelayMS()/2);
-            digitalWrite(myPins[actualMode], LOW);
-            delay(activeMode->getDelayMS()/2);
+            activeLightMode->setDelayMs(analogRead(VALUE_POTI));
+            digitalWrite(myPins[actualPotiMode], HIGH);
+            delay(activeLightMode->getDelayMS()/2);
+            digitalWrite(myPins[actualPotiMode], LOW);
+            delay(activeLightMode->getDelayMS()/2);
      
             break;
         case nothing:
         default: 
-            activeMode->step();
+            if(randomActive && activeLightMode->isFinished()) {
+                setActiveMode(random(-1, 8));
+                activeLightMode->setDurationMs(5000);
+            } 
+            activeLightMode->step();
             break;
     }
 

@@ -1,7 +1,7 @@
 #include "ModiPotiHandler.h"
 
 ModiPotiHandler::ModiPotiHandler(uint8_t port, uint16_t startValue, uint8_t nGroupSplits)
-    :PotiHandler(port), 
+    :port(port), 
     startValue(startValue), 
     nGroupSplits(nGroupSplits),
     normalizedMaxValue(1024 - startValue) { }
@@ -28,4 +28,8 @@ uint16_t ModiPotiHandler::normalizedModePoti() {
     int16_t value = this->getValue();
     value = max(0,value - this->startValue);
     return value;
+}
+
+uint16_t ModiPotiHandler::getValue() {
+    return analogRead(this->port);
 }
